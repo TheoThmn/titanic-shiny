@@ -13,7 +13,7 @@ library(shiny)
 ui <- fluidPage(
 
     # Application title
-    titlePanel("Old Faithful Geyser Data"),
+    titlePanel("Titanic Überlebensstatistik"),
 
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
@@ -37,13 +37,13 @@ server <- function(input, output) {
 
     output$distPlot <- renderPlot({
         # generate bins based on input$bins from ui.R
-        x    <- faithful[, 2]
-        bins <- seq(min(x), max(x), length.out = input$bins + 1)
+        data    <- read.csv2("titanic_data.csv", sep=",", dec=".")
+        # bins <- seq(min(data), max(data), length.out = input$bins + 1)
 
         # draw the histogram with the specified number of bins
-        hist(x, breaks = bins, col = 'darkgray', border = 'white',
-             xlab = 'Waiting time to next eruption (in mins)',
-             main = 'Histogram of waiting times')
+        hist(data$Age, breaks = input$bins, col = 'darkgray', border = 'white',
+             xlab = 'Alter der Passagiere',
+             main = 'Histogramm der Altersverteilung der Passagiere')
     })
 }
 

@@ -109,14 +109,15 @@ server <- function(input, output) {
   data_selected_dim <- reactive({
     cabin_letter <- gsub("[0-9]", "", data$Cabin)
     switch(input$secondDimension,
-           "Alter" = cut(data$Age, breaks = 8),
-           "Klasse" = data$Pclass,
-           "Geschlecht" = data$Sex,
-            "Kinder und Eltern an Bord" = data$Parch,,
-            "Geschwister und Ehepartner an Bord" = data$SibSp,
-            "Hafen der Einschiffung" = data$Embarked,
-            "Ticketpreis" = cut(data$Fare, breaks = 15),
-            "Kabine" = cabin_letter,          )
+      "Alter" = cut(data$Age, breaks = 8),
+      "Klasse" = data$Pclass,
+      "Geschlecht" = data$Sex,
+      "Kinder und Eltern an Bord" = data$Parch,
+      "Geschwister und Ehepartner an Bord" = data$SibSp,
+      "Hafen der Einschiffung" = data$Embarked,
+      "Ticketpreis" = cut(data$Fare, breaks = 15),
+      "Kabine" = cabin_letter
+    )
   })
 
   output$two_dim_mosaic <- renderPlot(

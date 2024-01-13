@@ -34,21 +34,67 @@ ui <- fluidPage(
         )
       )
     ),
-    tabPanel(
-      "zweidimensionale Visualisierungen",
-      sidebarLayout(
-        sidebarPanel(
-          # dropdown menu for second dimension of age, class etc.
-          selectInput(
-            "secondDimension",
-            "zweite Dimension:",
-            choices = c("Alter", "Klasse", "Geschlecht", "Kinder und Eltern an Bord", "Geschwister und Ehepartner an Bord", "Hafen der Einschiffung", "Ticketpreis", "Kabine"),
-            multiple = FALSE
+    navbarMenu(
+      "zweidimensionale Darstellungen",
+      tabPanel(
+        "nach Überleben",
+        sidebarLayout(
+          sidebarPanel(
+            # dropdown menu for second dimension of age, class etc.
+            selectInput(
+              "additionalDimension",
+              "zweite Dimension:",
+              choices = c(
+                "Alter",
+                "Klasse",
+                "Geschlecht",
+                "Kinder und Eltern an Bord",
+                "Geschwister und Ehepartner an Bord",
+                "Hafen der Einschiffung",
+                "Ticketpreis"
+              ),
+              multiple = FALSE
+            ),
+            uiOutput("slider")
           ),
-          uiOutput("slider")
-        ),
-        mainPanel(
-          plotOutput("two_dim_mosaic")
+          mainPanel(
+            plotOutput("two_dim_mosaic")
+          )
+        )
+      ),
+      tabPanel(
+        "Kombination zweier Merkmale",
+        sidebarLayout(
+          sidebarPanel(
+            
+            selectInput(
+              "firstDimension",
+              "erste Dimension:",
+              choices = c(
+                "Alter",
+                "Klasse",
+                "Kinder und Eltern an Bord",
+                "Geschwister und Ehepartner an Bord",
+                "Ticketpreis"
+              ),
+              multiple = FALSE
+            ),
+            selectInput(
+              "secondDimension",
+              "zweite Dimension:",
+              choices = c(
+                "Alter",
+                "Klasse",
+                "Kinder und Eltern an Bord",
+                "Geschwister und Ehepartner an Bord",
+                "Ticketpreis"
+              ),
+              multiple = FALSE
+            )
+          ),
+          mainPanel(
+            plotOutput("scatterplot")
+          )
         )
       )
     ),
@@ -56,14 +102,14 @@ ui <- fluidPage(
       "Alter",
       tabPanel(
         "Kontingenztabellen",
-          mainPanel(
-            "nach Überleben",
-            tableOutput("kontingenztabellen"),
-          )
+        mainPanel(
+          "nach Überleben",
+          tableOutput("kontingenztabellen"),
         )
       )
     )
   )
+)
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
@@ -98,8 +144,7 @@ server <- function(input, output) {
       data$Age,
       main = "Histogramm der Altersverteilung der Passagiere",
       xlab = "Alter", ylab = "Häufigkeit",
-      breaks = breaks,
-      beside = TRUE
+      breaks = breaks
     )
   })
 
@@ -108,7 +153,7 @@ server <- function(input, output) {
 
   data_selected_dim <- reactive({
     cabin_letter <- gsub("[0-9]", "", data$Cabin)
-    switch(input$secondDimension,
+    switch(input$additionalDimension,
       "Alter" = cut(data$Age, breaks = 8),
       "Klasse" = data$Pclass,
       "Geschlecht" = data$Sex,
@@ -116,7 +161,6 @@ server <- function(input, output) {
       "Geschwister und Ehepartner an Bord" = data$SibSp,
       "Hafen der Einschiffung" = data$Embarked,
       "Ticketpreis" = cut(data$Fare, breaks = 15),
-      "Kabine" = cabin_letter
     )
   })
 
@@ -129,19 +173,52 @@ server <- function(input, output) {
       main = "Überlebensstatistik",
       xlab = input$secondDimension,
       ylab = "Überlebt",
-      color = TRUE   
+      color = TRUE
     )
   )
   output$kontingenztabellen <- renderTable({
     head(data)
 
-    # convert 0 and 1 to boolean
     data$Survived <- as.logical(data$Survived)
 
-    # draw the histogram with the specified number of bins
     prop_survival_class <- prop.table(table(data$Survived, data$Pclass), 1)
     table(prop_survival_class)
   })
+
+
+  ######################################
+
+  data_first_selected_dim <- reactive({
+    cabin_letter <- gsub("[0-9]", "", data$Cabin)
+    switch(input$firstDimension,
+      "Alter" = data$Age,
+      "Klasse" = data$Pclass,
+      "Kinder und Eltern an Bord" = data$Parch,
+      "Geschwister und Ehepartner an Bord" = data$SibSp,
+      "Ticketpreis" = data$Fare,
+    )
+  })
+
+  data_second_selected_dim <- reactive({
+    cabin_letter <- gsub("[0-9]", "", data$Cabin)
+    switch(input$secondDimension,
+      "Alter" = data$Age,
+      "Klasse" = data$Pclass,
+      "Kinder und Eltern an Bord" = data$Parch,
+      "Geschwister und Ehepartner an Bord" = data$SibSp,
+      "Ticketpreis" = data$Fare,
+    )
+  })
+
+  output$scatterplot <- renderPlot(
+    plot(
+      data_first_selected_dim(),
+      data_second_selected_dim(),
+      main = "Überlebensstatistik",
+      xlab = input$firstDimension,
+      ylab = input$secondDimension
+    )
+  )
 }
 
 # Run the application

@@ -1,0 +1,4 @@
+*.html
+*.rmd
+titanic-sandbox*
+.DS_Store

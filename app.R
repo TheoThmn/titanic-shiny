@@ -66,7 +66,6 @@ ui <- fluidPage(
         "Kombination zweier Merkmale",
         sidebarLayout(
           sidebarPanel(
-            
             selectInput(
               "firstDimension",
               "erste Dimension:",
@@ -97,16 +96,6 @@ ui <- fluidPage(
           )
         )
       )
-    ),
-    navbarMenu(
-      "Alter",
-      tabPanel(
-        "Kontingenztabellen",
-        mainPanel(
-          "nach Überleben",
-          tableOutput("kontingenztabellen"),
-        )
-      )
     )
   )
 )
@@ -115,6 +104,8 @@ ui <- fluidPage(
 server <- function(input, output) {
   library(knitr)
   data <- read.csv2("titanic_data.csv", sep = ",", dec = ".")
+  data$Survived <- as.logical(data$Survived)
+
 
   ######################################
 
@@ -164,30 +155,22 @@ server <- function(input, output) {
     )
   })
 
-  output$two_dim_mosaic <- renderPlot(
+  output$two_dim_mosaic <- renderPlot({
     mosaicplot(
       table(
         data_selected_dim(),
         data$Survived
       ),
       main = "Überlebensstatistik",
-      xlab = input$secondDimension,
+      xlab = input$additionalDimension,
       ylab = "Überlebt",
       color = TRUE
     )
-  )
-  output$kontingenztabellen <- renderTable({
-    head(data)
-
-    data$Survived <- as.logical(data$Survived)
-
-    prop_survival_class <- prop.table(table(data$Survived, data$Pclass), 1)
-    table(prop_survival_class)
-  })
+  }) 
 
 
+  
   ######################################
-
   data_first_selected_dim <- reactive({
     cabin_letter <- gsub("[0-9]", "", data$Cabin)
     switch(input$firstDimension,

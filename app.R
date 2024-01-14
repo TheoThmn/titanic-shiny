@@ -13,7 +13,8 @@ library(shiny)
 options_nominal <- c(
   "Geschlecht",
   "Klasse",
-  "Einstiegshafen"
+  "Einstiegshafen",
+  "Kabinenbuchstabe"
 )
 options_kardinal <- c(
   "Alter",
@@ -25,16 +26,41 @@ options <- c(options_nominal, options_kardinal)
 
 switch_options <- function(data, selected_option, breaks = NULL) {
 
-  cabin_letter <- gsub("[0-9]", "", data$Cabin)
+  cabin_letters <- gsub("[0-9]", "", data$Cabin)
+  cabin_letter <- substr(cabin_letters, 1, 1)
+
+  cut_alter <- if (is.null(breaks)) {
+    data$Age
+  } else {
+    cut(data$Age, breaks = breaks)
+  }
+
+  cut_fare <- if (is.null(breaks)) {
+    data$Fare
+  } else {
+    cut(data$Fare, breaks = breaks)
+  }
+
+  cut_sibsp <- if (is.null(breaks)) {
+    data$SibSp
+  } else {
+    cut(data$SibSp, breaks = breaks)
+  }
+
+  cut_parch <- if (is.null(breaks)) {
+    data$Parch
+  } else {
+    cut(data$Parch, breaks = breaks)
+  }
 
   switch(selected_option,
-    "Alter" = data$Age,
+    "Alter" = cut_alter,
     "Klasse" = data$Pclass,
     "Geschlecht" = data$Sex,
-    "Kinder und Eltern an Bord" = data$Parch,
-    "Geschwister und Ehepartner an Bord" = data$SibSp,
+    "Kinder und Eltern an Bord" = cut_parch,
+    "Geschwister und Ehepartner an Bord" = cut_sibsp,
     "Einstiegshafen" = data$Embarked,
-    "Ticketpreis" = data$Fare,
+    "Ticketpreis" = cut_fare,
     "Kabinenbuchstabe" = cabin_letter
   )
 }
@@ -191,19 +217,23 @@ server <- function(input, output) {
   })
 
   ######################################
-
-
-  data_selected_dim <- reactive({
-    switch_options(data, input$additionalDimension)
+  output$slider <- renderUI({
+    if (input$additionalDimension %in% options_kardinal) {
+      sliderInput(
+        "breaks",
+        "Anzahl der Gruppen:",
+        min = 2,
+        max = 30,
+        value = 8,
+        step = 1
+      )
+    }
   })
-
-
-  ######################################
 
   output$two_dim_mosaic <- renderPlot({
     mosaicplot(
       table(
-        data_selected_dim(),
+        switch_options(data, input$additionalDimension, breaks = input$breaks),
         data$Survived
       ),
       main = paste(
@@ -240,7 +270,7 @@ server <- function(input, output) {
     ),
   )
 
-#######################################
+  #######################################
 
 
   data_first_selected_dim_mosaic <- reactive({

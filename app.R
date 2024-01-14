@@ -65,6 +65,9 @@ switch_options <- function(data, selected_option, breaks = NULL) {
   )
 }
 
+######################################################
+##################### UI #############################
+######################################################
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -174,6 +177,11 @@ ui <- fluidPage(
   )
 )
 
+######################################################
+##################### Server #########################
+######################################################
+
+
 # Define server logic required to draw a histogram
 server <- function(input, output) {
   library(knitr)
@@ -181,8 +189,7 @@ server <- function(input, output) {
   data <- read.csv2("titanic_data.csv", sep = ",", dec = ".")
   data$Survived <- as.logical(data$Survived)
 
-
-  ######################################
+  ################# Startseite #####################
 
   output$survival <- renderPlot({
     barplot(
@@ -216,7 +223,7 @@ server <- function(input, output) {
     )
   })
 
-  ######################################
+  ############### X unter der Bedingung Überleben #######################
   output$slider <- renderUI({
     if (input$additionalDimension %in% options_kardinal) {
       sliderInput(
@@ -246,7 +253,7 @@ server <- function(input, output) {
     )
   })
 
-  ######################################
+  ################ Streudiagramme ######################
 
   data_first_selected_dim <- reactive({
     switch_options(data, input$first_dimension_scatter)
@@ -270,8 +277,7 @@ server <- function(input, output) {
     ),
   )
 
-  #######################################
-
+  ################### Mosaikplots ####################
 
   data_first_selected_dim_mosaic <- reactive({
     switch_options(data, input$first_dimension_mosaic)
@@ -299,8 +305,7 @@ server <- function(input, output) {
     )
   })
 
-  #######################################
-
+  ################## Kontingenzmaße #####################
 
   output$contingency <- renderPlot({
     cramer_v_values <- sapply(input$contingencyDimensions, function(dim) {
@@ -317,8 +322,6 @@ server <- function(input, output) {
       horiz = TRUE
     )
   })
-
-  ######################################
 }
 
 # Run the application

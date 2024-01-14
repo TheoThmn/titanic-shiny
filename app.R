@@ -29,28 +29,20 @@ switch_options <- function(data, selected_option, breaks = NULL) {
   cabin_letters <- gsub("[0-9]", "", data$Cabin)
   cabin_letter <- substr(cabin_letters, 1, 1)
 
-  cut_alter <- if (is.null(breaks)) {
-    data$Age
+  if (is.null(breaks)) {
+    cut_alter <- data$Age
+    cut_fare <- data$Fare
+    cut_sibsp <- data$SibSp
+    cut_parch <- data$Parch
   } else {
-    cut(data$Age, breaks = breaks)
-  }
-
-  cut_fare <- if (is.null(breaks)) {
-    data$Fare
-  } else {
-    cut(data$Fare, breaks = breaks)
-  }
-
-  cut_sibsp <- if (is.null(breaks)) {
-    data$SibSp
-  } else {
-    cut(data$SibSp, breaks = breaks)
-  }
-
-  cut_parch <- if (is.null(breaks)) {
-    data$Parch
-  } else {
-    cut(data$Parch, breaks = breaks)
+    cut_alter <- cut(
+      data$Age,
+      breaks = breaks,
+      dig.lab = 2
+    )
+    cut_fare <- cut(data$Fare, breaks = breaks)
+    cut_sibsp <- cut(data$SibSp, breaks = breaks)
+    cut_parch <- cut(data$Parch, breaks = breaks)
   }
 
   switch(selected_option,
@@ -73,34 +65,95 @@ switch_options <- function(data, selected_option, breaks = NULL) {
 ui <- fluidPage(
   navbarPage(
     "Titanic Überlebensstatistik",
-    tabPanel(
-      "Daten verstehen",
-      sidebarLayout(
-        sidebarPanel(
-          sliderInput("gruppen",
-            "Größe der Altersgruppen:",
-            min = 5,
-            max = 30,
-            value = 20,
-            step = 5
+    navbarMenu(
+      "Startseite",
+      tabPanel(
+        "Tabelle",
+        sidebarLayout(
+          sidebarPanel(
+            h4("Tabelle der Daten"),
+            p("Survived: Überlebt (1) oder Gestorben (0)"),
+            p("Pclass: Kabinenklasse (1 = 1. Klasse, 2 = 2. Klasse, 3 = 3. Klasse)"),
+            p("SibSp: Anzahl der Geschwister und Ehepartner an Bord"),
+            p("Parch: Anzahl der Kinder und Eltern an Bord"),
+            p("Ticket: Ticketnummer"),
+            p("Fare: Ticketpreis"),
+            p("Cabin: Kabinennummer"),
+            p("Embarked: Einstiegshafen (C = Cherbourg, Q = Queenstown, S = Southampton)"),
+            selectInput(
+              "survived",
+              "Überlebt",
+              choices = c("Überlebt" = TRUE, "Gestorben" = FALSE),
+              multiple = TRUE,
+            ),
+            selectInput(
+              "pclass",
+              "Klasse",
+              choices = c(
+                "1. Klasse" = "1",
+                "2. Klasse" = "2",
+                "3. Klasse" = "3"
+              ),
+              multiple = TRUE,
+            ),
+            selectInput(
+              "sex",
+              "Geschlecht",
+              choices = c("männlich" = "male", "weiblich" = "female"),
+              multiple = TRUE,
+            ),
+            sliderInput("fares",
+              "Ticketpreis",
+              min = 0,
+              max = 513,
+              value = c(0, 513),
+              step = 1
+            ),
+            selectInput(
+              "harbor",
+              "Einstiegshafen",
+              choices = c(
+                "Cherbourg" = "C",
+                "Queenstown" = "Q",
+                "Southampton" = "S"
+              ),
+              multiple = TRUE
+            )
+          ),
+          mainPanel(
+            dataTableOutput("dataTable")
           )
-        ),
-        mainPanel(
-          plotOutput("survival"),
-          plotOutput("altersverteilungHist"),
-          plotOutput("survivalClassBarplot"),
+        )
+      ),
+      tabPanel(
+        "Übersicht",
+        sidebarLayout(
+          sidebarPanel(
+            sliderInput("gruppen",
+              "Größe der Altersgruppen",
+              min = 5,
+              max = 30,
+              value = 20,
+              step = 5
+            )
+          ),
+          mainPanel(
+            plotOutput("survival"),
+            plotOutput("altersverteilungHist"),
+            plotOutput("survivalClassBarplot"),
+          )
         )
       )
     ),
     navbarMenu(
-      "zweidimensionale Darstellungen",
+      "Kombination von Merkmalen",
       tabPanel(
         "nach Überleben",
         sidebarLayout(
           sidebarPanel(
             selectInput(
-              "additionalDimension",
-              "zweite Dimension:",
+              "additional_dimension",
+              "zweites Merkmal",
               choices = options,
               multiple = FALSE
             ),
@@ -108,29 +161,10 @@ ui <- fluidPage(
           ),
           mainPanel(
             plotOutput("two_dim_mosaic"),
-            plotOutput("abhängigkeit")
-          )
-        )
-      ),
-      tabPanel(
-        "Kombination im Streudiagramm",
-        sidebarLayout(
-          sidebarPanel(
-            selectInput(
-              "first_dimension_scatter",
-              "erste Dimension:",
-              choices = options_kardinal,
-              multiple = FALSE
-            ),
-            selectInput(
-              "second_dimension_scatter",
-              "zweite Dimension:",
-              choices = options_kardinal,
-              multiple = FALSE
-            )
-          ),
-          mainPanel(
-            plotOutput("scatterplot"),
+            plotOutput("barplot_on_survival"),
+            "(Kardinalskalierte Merkmale werden gerundet)",
+            htmlOutput("zusätzliche_bilder"),
+            plotOutput("boxplot_comparison")
           )
         )
       ),
@@ -140,19 +174,43 @@ ui <- fluidPage(
           sidebarPanel(
             selectInput(
               "first_dimension_mosaic",
-              "erste Dimension:",
+              "erstes Merkmal",
               choices = options_nominal,
-              multiple = FALSE
+              multiple = FALSE,
+              selected = "Einstiegshafen"
             ),
             selectInput(
               "second_dimension_mosaic",
-              "zweite Dimension:",
+              "zweites Merkmal",
               choices = options_nominal,
-              multiple = FALSE
+              multiple = FALSE,
+              selected = "Klasse"
             )
           ),
           mainPanel(
             plotOutput("mosaicplot")
+          )
+        )
+      ),
+      tabPanel(
+        "Kombination im Streudiagramm",
+        sidebarLayout(
+          sidebarPanel(
+            selectInput(
+              "first_dimension_scatter",
+              "erstes Merkmal",
+              choices = options_kardinal,
+              multiple = FALSE
+            ),
+            selectInput(
+              "second_dimension_scatter",
+              "zweites Merkmal",
+              choices = rev(options_kardinal),
+              multiple = FALSE
+            )
+          ),
+          mainPanel(
+            plotOutput("scatterplot"),
           )
         )
       )
@@ -163,10 +221,15 @@ ui <- fluidPage(
         sidebarPanel(
           selectInput(
             "contingencyDimensions",
-            "Merkmale:",
+            "Merkmale",
             choices = options,
             multiple = TRUE,
-            selected = c("Alter", "Klasse")
+            selected = c(
+              "Ticketpreis",
+              "Geschlecht",
+              "Alter",
+              "Klasse"
+            )
           )
         ),
         mainPanel(
@@ -186,6 +249,7 @@ ui <- fluidPage(
 server <- function(input, output) {
   library(knitr)
   library(DescTools)
+  library(data.table)
   data <- read.csv2("titanic_data.csv", sep = ",", dec = ".")
   data$Survived <- as.logical(data$Survived)
 
@@ -199,7 +263,8 @@ server <- function(input, output) {
       xlab = "Relative Häufigkeit",
       names.arg = c("Gestorben", "Überlebt"),
       horiz = TRUE,
-      col = c("#ff000053", "#00ff003e")
+      beside = FALSE,
+      col = c("#b9b9b953", "#00ff003e")
     )
   })
 
@@ -212,7 +277,7 @@ server <- function(input, output) {
     )
   })
 
-
+  
   output$altersverteilungHist <- renderPlot({
     breaks <- seq(0, 100, input$gruppen)
     hist(
@@ -223,9 +288,31 @@ server <- function(input, output) {
     )
   })
 
+  output$dataTable <- renderDataTable({
+    filtered_data <- data
+    if (!is.null(input$survived)) {
+      filtered_data <- filtered_data[data$Survived %in% input$survived, ]
+    }
+    if (!is.null(input$fares)) {
+      filtered_data <- filtered_data[data$Fare >= input$fares[1], ]
+      filtered_data <- filtered_data[data$Fare <= input$fares[2], ]
+    }
+    if (!is.null(input$sex)) {
+      filtered_data <- filtered_data[data$Sex %in% input$sex, ]
+    }
+    if (!is.null(input$pclass)) {
+      filtered_data <- filtered_data[data$Pclass %in% input$pclass, ]
+    }
+    if (!is.null(input$harbor)) {
+      filtered_data <- filtered_data[data$Embarked %in% input$harbor, ]
+    }
+    filtered_data
+
+  })
+
   ############### X unter der Bedingung Überleben #######################
   output$slider <- renderUI({
-    if (input$additionalDimension %in% options_kardinal) {
+    if (input$additional_dimension %in% options_kardinal) {
       sliderInput(
         "breaks",
         "Anzahl der Gruppen:",
@@ -237,20 +324,65 @@ server <- function(input, output) {
     }
   })
 
+  output$zusätzliche_bilder <- renderText(
+    if(input$additional_dimension == "Kabinenbuchstabe") {
+      '<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Titanic_cutaway_diagram.png/800px-Titanic_cutaway_diagram.png" alt="Titanic cutaway diagram" width="500" height="500">'
+    }
+  )
   output$two_dim_mosaic <- renderPlot({
     mosaicplot(
       table(
-        switch_options(data, input$additionalDimension, breaks = input$breaks),
+        switch_options(data, input$additional_dimension, breaks = input$breaks),
         data$Survived
       ),
       main = paste(
         "Mosaikplot Überleben in Abhängigkeit von",
-        input$additionalDimension
+        input$additional_dimension
       ),
-      xlab = input$additionalDimension,
+      xlab = input$additional_dimension,
       ylab = "Überlebt",
       color = TRUE
     )
+  })
+
+  output$barplot_on_survival <- renderPlot({
+    this_data <- switch_options(
+      data,
+      input$additional_dimension,
+      breaks = input$breaks
+    )
+    this_survival <- factor(data$Survived, levels = c(TRUE, FALSE))
+    barplot(
+      prop.table(table(this_survival, this_data), 2),
+      main = paste(
+        "Überlebensstatistik in Abhängigkeit von",
+        input$additional_dimension
+      ),
+      ylab = "Relative Häufigkeit von Überleben",
+      xlab = input$additional_dimension,
+      beside = FALSE,
+      col = c("#00ff003e", "#b9b9b953"),
+      legend = (c("Überlebt", "Gestorben"))
+    )
+  })
+
+  output$boxplot_comparison <- renderPlot({
+    this_data <- switch_options(data, input$additional_dimension)
+    if (input$additional_dimension %in% options_kardinal) {
+      boxplot(
+        this_data ~ data$Survived,
+        main = paste(
+          "Boxplot Überleben in Abhängigkeit von",
+          input$additional_dimension
+        ),
+        ylab = input$additional_dimension,
+        xlab = "Überlebt",
+        col = c("#00ff003e", "#b9b9b953"),
+        names = c("Überlebt", "Gestorben"),
+        # ausreißer ausblenden
+        outline = FALSE
+      )
+    }
   })
 
   ################ Streudiagramme ######################
@@ -316,7 +448,7 @@ server <- function(input, output) {
     barplot(
       cramer_v_values,
       xlab = "Cramer V",
-      ylab = "Dimension",
+      ylab = "Merkmale",
       main = "Kontingenzmaße vom Überleben (Cramer V)",
       xlim = c(0, 1),
       horiz = TRUE

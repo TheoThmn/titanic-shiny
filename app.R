@@ -9,6 +9,9 @@
 #
 
 library(shiny)
+library(knitr)
+library(DescTools)
+library(data.table)
 
 options_nominal <- c(
   "Geschlecht",
@@ -247,9 +250,7 @@ ui <- fluidPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-  library(knitr)
-  library(DescTools)
-  library(data.table)
+
   data <- read.csv2("titanic_data.csv", sep = ",", dec = ".")
   data$Survived <- as.logical(data$Survived)
 
@@ -277,7 +278,6 @@ server <- function(input, output) {
     )
   })
 
-  
   output$altersverteilungHist <- renderPlot({
     breaks <- seq(0, 100, input$gruppen)
     hist(
@@ -287,6 +287,8 @@ server <- function(input, output) {
       breaks = breaks
     )
   })
+
+  ################# Tabelle #####################
 
   output$dataTable <- renderDataTable({
     filtered_data <- data

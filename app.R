@@ -339,9 +339,9 @@ server <- function(input, output) {
 
   ## as in https://stackoverflow.com/a/47206071
   output$summary <- renderPrint({
-      this_data <- switch_options(data, input$selected_dimension)
-      summary(this_data)
-    })
+    this_data <- switch_options(data, input$selected_dimension)
+    summary(this_data)
+  })
 
   output$proportions_and_absolute_numbers <- renderTable({
 

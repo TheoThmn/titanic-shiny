@@ -59,7 +59,8 @@ switch_options <- function(data, selected_option, breaks = NULL) {
     "Familienmitglieder an Bord" = cut_sibsp + cut_parch,
     "Einstiegshafen" = data$Embarked,
     "Ticketpreis" = cut_fare,
-    "Kabinenbuchstabe" = cabin_letter
+    "Kabinenbuchstabe" = cabin_letter,
+    "Überlebt" = data$Survived
   )
 }
 
@@ -157,7 +158,7 @@ ui <- fluidPage(
             selectInput(
               "selected_dimension",
               "Merkmal",
-              choices = options,
+              choices = c("Überlebt", options_nominal),
               multiple = FALSE
             )
           ),
@@ -345,12 +346,12 @@ server <- function(input, output) {
   output$proportions_and_absolute_numbers <- renderTable({
 
     this_data <- switch_options(data, input$selected_dimension)
-    h_table <- as.data.frame(table(this_data))
+    h_table <- table(this_data)
     p_table <- prop.table(table(this_data))
-
     combined_table <- cbind(h_table, p_table)
-    colnames(combined_table) <- c("Ausprägung", "Häufigkeit", "relative Häufigkeit")
-
+    combined_table <- data.frame(RowNames = rownames(combined_table), combined_table)
+    colnames(combined_table) <- c("Merkmal", "Häufigkeit", "relative Häufigkeit")
+    combined_table$Häufigkeit <- as.integer(combined_table$Häufigkeit)
     combined_table
   })
 

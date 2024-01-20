@@ -190,7 +190,7 @@ ui <- fluidPage(
             plotOutput("barplot_on_survival"),
             "(Kardinalskalierte Merkmale werden gerundet)",
             htmlOutput("zusätzliche_bilder"),
-            plotOutput("boxplot_comparison")
+            tableOutput("contingency_table")
           )
         )
       ),
@@ -447,6 +447,18 @@ server <- function(input, output) {
       legend = (c("Überlebt", "Gestorben"))
     )
   })
+
+  ## as in https://stackoverflow.com/questions/70394513/obtain-contingecy-table-based-on-users-input-rshiny
+  output$contingency_table <- renderTable(
+    {
+      this_data <- switch_options(data, input$additional_dimension, breaks = input$breaks)
+      this_survival <- data$Survived
+      frame <- as.data.frame.matrix(prop.table(table(this_data, this_survival), 2))
+      colnames(frame) <- c("Gestorben", "Überlebt")
+      frame
+    },
+    rownames = TRUE
+  )
 
   ################ Streudiagramme ######################
 

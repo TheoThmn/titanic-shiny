@@ -149,8 +149,26 @@ ui <- fluidPage(
             plotOutput("survivalClassBarplot"),
           )
         )
+      ),
+      tabPanel(
+        "Zusammenfassungen",
+        sidebarLayout(
+          sidebarPanel(
+            selectInput(
+              "selected_dimension",
+              "Merkmal",
+              choices = options,
+              multiple = FALSE
+            )
+          ),
+          mainPanel(
+            verbatimTextOutput("summary"),
+            tableOutput("proportions_and_absolute_numbers")
+          )
+        )
       )
     ),
+
     navbarMenu(
       "Kombination von Merkmalen",
       tabPanel(
@@ -316,7 +334,29 @@ server <- function(input, output) {
 
   })
 
+  ################# Summary einzelner Merkmale #####################
+
+  ## as in https://stackoverflow.com/a/47206071
+  output$summary <- renderPrint({
+      this_data <- switch_options(data, input$selected_dimension)
+      summary(this_data)
+    })
+
+  output$proportions_and_absolute_numbers <- renderTable({
+
+    this_data <- switch_options(data, input$selected_dimension)
+    h_table <- as.data.frame(table(this_data))
+    p_table <- prop.table(table(this_data))
+
+    combined_table <- cbind(h_table, p_table)
+    colnames(combined_table) <- c("Ausprägung", "Häufigkeit", "relative Häufigkeit")
+
+    combined_table
+  })
+
+
   ############### X unter der Bedingung Überleben #######################
+
   output$slider <- renderUI({
     if (input$additional_dimension %in% options_kardinal) {
       sliderInput(

@@ -283,7 +283,7 @@ server <- function(input, output) {
     barplot(
       prop.table(table(data$Survived)),
       main = "Überlebensstatistik",
-      ylab = "Überlebt",
+      ylab = "Schicksal",
       xlab = "Relative Häufigkeit",
       names.arg = c("Gestorben", "Überlebt"),
       horiz = TRUE,

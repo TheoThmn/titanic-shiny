@@ -448,7 +448,6 @@ server <- function(input, output) {
     )
   })
 
-  ## as in https://stackoverflow.com/questions/70394513/obtain-contingecy-table-based-on-users-input-rshiny
   output$contingency_table <- renderTable(
     {
       this_data <- switch_options(data, input$additional_dimension, breaks = input$breaks)

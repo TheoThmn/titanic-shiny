@@ -456,8 +456,8 @@ server <- function(input, output) {
     {
       this_data <- switch_options(data, input$additional_dimension, breaks = input$breaks)
       this_survival <- data$Survived
-      frame <- as.data.frame.matrix(prop.table(table(this_data, this_survival), 2))
-      colnames(frame) <- c("Gestorben", "Überlebt")
+      frame <- as.data.frame.matrix(prop.table(table(this_survival, this_data), 1))
+      rownames(frame) <- c("Gestorben", "Überlebt")
       frame
     },
     rownames = TRUE

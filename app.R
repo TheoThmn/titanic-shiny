@@ -382,7 +382,8 @@ server <- function(input, output) {
     filtered_data <- data
     if (
         input$additional_dimension == "Kinder und Eltern an Bord" || 
-        input$additional_dimension == "Geschwister und Ehepartner an Bord") {
+        input$additional_dimension == "Geschwister und Ehepartner an Bord" ||
+        input$additional_dimension == "Familienmitglieder an Bord") {
       if (input$only_selected_agegroup == "Nur Kinder einbeziehen") {
         filtered_data <- subset(filtered_data, Age <= 18)
       } else if (input$only_selected_agegroup == "Nur Erwachsene einbeziehen") {
@@ -408,7 +409,8 @@ server <- function(input, output) {
   output$checkbox_agegroup_only <- renderUI({
     altersfiltergruppen <- c("Alle einbeziehen", "Nur Kinder einbeziehen", "Nur Erwachsene einbeziehen")
     if (input$additional_dimension == "Kinder und Eltern an Bord" ||
-    input$additional_dimension == "Geschwister und Ehepartner an Bord") {
+    input$additional_dimension == "Geschwister und Ehepartner an Bord" ||
+    input$additional_dimension == "Familienmitglieder an Bord") {
       radioButtons(
         "only_selected_agegroup",
         "Nur Kinder oder Erwachsene einbeziehen (Kinder: Age < 18)",
@@ -422,7 +424,8 @@ server <- function(input, output) {
     filtered_data <- data
     if (
         input$additional_dimension == "Kinder und Eltern an Bord" || 
-        input$additional_dimension == "Geschwister und Ehepartner an Bord") {
+        input$additional_dimension == "Geschwister und Ehepartner an Bord" ||
+        input$additional_dimension == "Familienmitglieder an Bord") {
       if (input$only_selected_agegroup == "Nur Kinder einbeziehen") {
         filtered_data <- subset(filtered_data, Age <= 18)
       } else if (input$only_selected_agegroup == "Nur Erwachsene einbeziehen") {

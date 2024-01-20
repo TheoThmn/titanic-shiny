@@ -298,6 +298,9 @@ server <- function(input, output) {
     kable(prop_survival_class)
     barplot(prop_survival_class,
       main = "Kabinenklasse mit Anteilen der Überlebenden",
+      ylab = "Relative Häufigkeit",
+      xlab = "Klasse",
+      legend = c("Gestorben", "Überlebt")
     )
   })
 

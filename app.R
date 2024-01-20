@@ -300,7 +300,8 @@ server <- function(input, output) {
       main = "Kabinenklasse mit Anteilen der Überlebenden",
       ylab = "Relative Häufigkeit",
       xlab = "Klasse",
-      legend = c("Gestorben", "Überlebt")
+      legend = c("Gestorben", "Überlebt"),
+      col = c("#b9b9b953", "#00ff003e")
     )
   })
 

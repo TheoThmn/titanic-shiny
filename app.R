@@ -13,7 +13,7 @@ library(knitr)
 library(DescTools)
 library(data.table)
 
-options_nominal <- c(
+options_up_to_ordinal <- c(
   "Geschlecht",
   "Klasse",
   "Einstiegshafen",
@@ -23,11 +23,11 @@ options_nominal <- c(
   "Familienmitglieder an Bord"
 
 )
-options_kardinal <- c(
+options_stetig <- c(
   "Alter",
   "Ticketpreis"
 )
-options <- c(options_nominal, options_kardinal)
+options <- c(options_up_to_ordinal, options_stetig)
 
 switch_options <- function(data, selected_option, breaks = NULL) {
 
@@ -158,7 +158,7 @@ ui <- fluidPage(
             selectInput(
               "selected_dimension",
               "Merkmal",
-              choices = c("Überlebt", options_nominal),
+              choices = c("Überlebt", options_up_to_ordinal),
               multiple = FALSE
             )
           ),
@@ -201,14 +201,14 @@ ui <- fluidPage(
             selectInput(
               "first_dimension_mosaic",
               "erstes Merkmal",
-              choices = options_nominal,
+              choices = options_up_to_ordinal,
               multiple = FALSE,
               selected = "Einstiegshafen"
             ),
             selectInput(
               "second_dimension_mosaic",
               "zweites Merkmal",
-              choices = options_nominal,
+              choices = options_up_to_ordinal,
               multiple = FALSE,
               selected = "Klasse"
             )
@@ -225,13 +225,13 @@ ui <- fluidPage(
             selectInput(
               "first_dimension_scatter",
               "erstes Merkmal",
-              choices = options_kardinal,
+              choices = options_stetig,
               multiple = FALSE
             ),
             selectInput(
               "second_dimension_scatter",
               "zweites Merkmal",
-              choices = rev(options_kardinal),
+              choices = rev(options_stetig),
               multiple = FALSE
             )
           ),
@@ -359,7 +359,7 @@ server <- function(input, output) {
   ############### X unter der Bedingung Überleben #######################
 
   output$slider <- renderUI({
-    if (input$additional_dimension %in% options_kardinal) {
+    if (input$additional_dimension %in% options_stetig) {
       sliderInput(
         "breaks",
         "Anzahl der Gruppen:",

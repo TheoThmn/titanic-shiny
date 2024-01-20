@@ -160,7 +160,8 @@ ui <- fluidPage(
               choices = options,
               multiple = FALSE
             ),
-            uiOutput("slider")
+            uiOutput("slider"),
+            uiOutput("checkbox_agegroup_only"),
           ),
           mainPanel(
             plotOutput("two_dim_mosaic"),
@@ -331,11 +332,24 @@ server <- function(input, output) {
       '<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Titanic_cutaway_diagram.png/800px-Titanic_cutaway_diagram.png" alt="Titanic cutaway diagram" width="500" height="500">'
     }
   )
+
+
   output$two_dim_mosaic <- renderPlot({
+    filtered_data <- data
+    if (
+        input$additional_dimension == "Kinder und Eltern an Bord" || 
+        input$additional_dimension == "Geschwister und Ehepartner an Bord") {
+      if (input$only_selected_agegroup == "Nur Kinder einbeziehen") {
+        filtered_data <- subset(filtered_data, Age <= 18)
+      } else if (input$only_selected_agegroup == "Nur Erwachsene einbeziehen") {
+        filtered_data <- subset(filtered_data, Age > 18)
+      }
+    }
+    mosaic_data <- switch_options(filtered_data, input$additional_dimension, breaks = input$breaks)
     mosaicplot(
       table(
-        switch_options(data, input$additional_dimension, breaks = input$breaks),
-        data$Survived
+        mosaic_data,
+        filtered_data$Survived
       ),
       main = paste(
         "Mosaikplot Überleben in Abhängigkeit von",
@@ -345,6 +359,19 @@ server <- function(input, output) {
       ylab = "Überlebt",
       color = TRUE
     )
+  })
+
+  output$checkbox_agegroup_only <- renderUI({
+    altersfiltergruppen <- c("Alle einbeziehen", "Nur Kinder einbeziehen", "Nur Erwachsene einbeziehen")
+    if (input$additional_dimension == "Kinder und Eltern an Bord" ||
+    input$additional_dimension == "Geschwister und Ehepartner an Bord") {
+      radioButtons(
+        "only_selected_agegroup",
+        "Nur Kinder oder Erwachsene einbeziehen (Kinder: Age < 18)",
+        choices = altersfiltergruppen,
+        selected = NULL,
+      )
+    }
   })
 
   output$barplot_on_survival <- renderPlot({

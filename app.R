@@ -17,12 +17,14 @@ options_nominal <- c(
   "Geschlecht",
   "Klasse",
   "Einstiegshafen",
-  "Kabinenbuchstabe"
+  "Kabinenbuchstabe",
+  "Kinder und Eltern an Bord",
+  "Geschwister und Ehepartner an Bord",
+  "Familienmitglieder an Bord"
+
 )
 options_kardinal <- c(
   "Alter",
-  "Kinder und Eltern an Bord",
-  "Geschwister und Ehepartner an Bord",
   "Ticketpreis"
 )
 options <- c(options_nominal, options_kardinal)
@@ -54,6 +56,7 @@ switch_options <- function(data, selected_option, breaks = NULL) {
     "Geschlecht" = data$Sex,
     "Kinder und Eltern an Bord" = cut_parch,
     "Geschwister und Ehepartner an Bord" = cut_sibsp,
+    "Familienmitglieder an Bord" = cut_sibsp + cut_parch,
     "Einstiegshafen" = data$Embarked,
     "Ticketpreis" = cut_fare,
     "Kabinenbuchstabe" = cabin_letter
@@ -375,12 +378,18 @@ server <- function(input, output) {
   })
 
   output$barplot_on_survival <- renderPlot({
-    this_data <- switch_options(
-      data,
-      input$additional_dimension,
-      breaks = input$breaks
-    )
-    this_survival <- factor(data$Survived, levels = c(TRUE, FALSE))
+    filtered_data <- data
+    if (
+        input$additional_dimension == "Kinder und Eltern an Bord" || 
+        input$additional_dimension == "Geschwister und Ehepartner an Bord") {
+      if (input$only_selected_agegroup == "Nur Kinder einbeziehen") {
+        filtered_data <- subset(filtered_data, Age <= 18)
+      } else if (input$only_selected_agegroup == "Nur Erwachsene einbeziehen") {
+        filtered_data <- subset(filtered_data, Age > 18)
+      }
+    }
+    this_data <- switch_options(filtered_data, input$additional_dimension, breaks = input$breaks)
+    this_survival <- factor(filtered_data$Survived, levels = c(TRUE, FALSE))
     barplot(
       prop.table(table(this_survival, this_data), 2),
       main = paste(
@@ -393,25 +402,6 @@ server <- function(input, output) {
       col = c("#00ff003e", "#b9b9b953"),
       legend = (c("Überlebt", "Gestorben"))
     )
-  })
-
-  output$boxplot_comparison <- renderPlot({
-    this_data <- switch_options(data, input$additional_dimension)
-    if (input$additional_dimension %in% options_kardinal) {
-      boxplot(
-        this_data ~ data$Survived,
-        main = paste(
-          "Boxplot Überleben in Abhängigkeit von",
-          input$additional_dimension
-        ),
-        ylab = input$additional_dimension,
-        xlab = "Überlebt",
-        col = c("#00ff003e", "#b9b9b953"),
-        names = c("Überlebt", "Gestorben"),
-        # ausreißer ausblenden
-        outline = FALSE
-      )
-    }
   })
 
   ################ Streudiagramme ######################
